@@ -1,11 +1,13 @@
 #define __USE_XOPEN ;
 #define _GNU_SOURCE ;
-#include<stdlib.h>
-#include<stdio.h>
-#include<time.h>
-#include<unistd.h>
 
-struct Alarm {
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
+
+struct Alarm
+{
    time_t end_time;
    int pid;
 };
@@ -13,15 +15,16 @@ struct Alarm {
 struct Alarm alarms[100];
 
 /* simple helper-function to empty stdin https://stackoverflow.com/a/53059527*/
-void empty_stdin (void) 
+void empty_stdin(void)
 {
-    int c = getchar();
+   int c = getchar();
 
-    while (c != '\n' && c != EOF)
-        c = getchar();
+   while (c != '\n' && c != EOF)
+      c = getchar();
 }
 
-void schedule() {
+void schedule()
+{
    struct Alarm new_alarm;
    printf("Schedule alarm at which date and time? ");
    char timestring[19];
@@ -29,67 +32,71 @@ void schedule() {
    scanf("%19[^\n]", timestring);
    strptime(timestring, "%Y-%m-%d %H:%M:%S", &timestruct);
    time_t unixtimestamp = mktime(&timestruct);
-   long secondsleft = unixtimestamp-time(NULL);
+   printf("%ld - %ld + %ld \n", unixtimestamp, time(NULL), timestruct.tm_gmtoff);
+   printf("Without tm_gmtoff: %ld \n", unixtimestamp - time(NULL));
+   long secondsleft = unixtimestamp - time(NULL) + timestruct.tm_gmtoff;
    printf("Setting an alarm in %ld seconds \n", secondsleft);
    new_alarm.end_time = unixtimestamp;
    int pid = fork();
-   if(pid==0){
+   if (pid == 0)
+   {
       sleep(secondsleft);
+      printf("ALARM!");
       printf("\a");
       exit(0);
    }
-   else{
-      //in parent
+   else
+   {
+      // in parent
       new_alarm.pid = pid;
    }
 }
 
-void list() {
-
+void list()
+{
 }
 
-void cancel() {
-
+void cancel()
+{
 }
 
-int main() {
+int main()
+{
    time_t timer;
    char buffer[26];
-   struct tm* tm_info;
 
-   timer = time(NULL);
-   tm_info = localtime(&timer);
+   printf("Welcome to the alarm clock!\n");
+   while (1)
+   {
+      timer = time(NULL);
+      strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", localtime(&timer));
 
-   strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-   printf("Welcome to the alarm clock!");
-   while(1){
-      printf("It is currently %s Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n", buffer);
+      printf("It is currently %s \n Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n", buffer);
       char choice = getchar();
       empty_stdin();
       while (choice != 's' && choice != 'l' && choice != 'c' && choice != 'x')
       {
-         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n" );
+         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n");
          choice = getchar();
          empty_stdin();
       }
-      
-      switch(choice)
+
+      switch (choice)
       {
-         case 's':
-            schedule();
-            break;
-         case 'l':
-            list();
-            break;
-         case 'c':
-            cancel();
-            break;
-         case 'x':
-            exit(0);
-            break;
+      case 's':
+         schedule();
+         break;
+      case 'l':
+         list();
+         break;
+      case 'c':
+         cancel();
+         break;
+      case 'x':
+         exit(0);
+         break;
       }
-   }   
-   
+   }
+
    return 0;
 }
-
