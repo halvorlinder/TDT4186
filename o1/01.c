@@ -13,6 +13,7 @@ struct Alarm
 };
 
 struct Alarm alarms[100];
+int nextAlarmIndex = 0;
 
 /* simple helper-function to empty stdin https://stackoverflow.com/a/53059527*/
 void empty_stdin(void)
@@ -30,6 +31,7 @@ void schedule()
    char timestring[19];
    struct tm timestruct;
    scanf("%19[^\n]", timestring);
+   empty_stdin();
    strptime(timestring, "%Y-%m-%d %H:%M:%S", &timestruct);
    time_t unixtimestamp = mktime(&timestruct);
    printf("%ld - %ld + %ld \n", unixtimestamp, time(NULL), timestruct.tm_gmtoff);
@@ -49,11 +51,18 @@ void schedule()
    {
       // in parent
       new_alarm.pid = pid;
+      alarms[nextAlarmIndex] = new_alarm;
+      nextAlarmIndex++;
    }
 }
 
 void list()
 {
+   for (size_t i = 0; i < nextAlarmIndex; i++)
+   {
+      printf("Alarm %ld at %ld\n", i+1, alarms[i].end_time);
+   }
+   
 }
 
 void cancel()
@@ -71,7 +80,7 @@ int main()
       timer = time(NULL);
       strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", localtime(&timer));
 
-      printf("It is currently %s \n Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n", buffer);
+      printf("It is currently %s \nPlease enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n", buffer);
       char choice = getchar();
       empty_stdin();
       while (choice != 's' && choice != 'l' && choice != 'c' && choice != 'x')
