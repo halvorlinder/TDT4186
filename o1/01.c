@@ -13,10 +13,16 @@ struct Alarm
    int pid;
 };
 
-struct Alarm alarms[100];
-int nextAlarmIndex = 0;
+/* Enum members are constant expressions, thus anonymous enum will work as constants */
+enum
+{
+   MAX_ALARMS = 5,
+};
 
-/* simple helper-function to empty stdin https://stackoverflow.com/a/53059527*/
+struct Alarm alarms[MAX_ALARMS];
+int amountOfAlarms = 0;
+
+/* Simple helper-function to empty stdin https://stackoverflow.com/a/53059527 */
 void empty_stdin(void)
 {
    int c = getchar();
@@ -27,15 +33,20 @@ void empty_stdin(void)
 
 void schedule()
 {
-   //Timezone crap 
+   if (amountOfAlarms == MAX_ALARMS)
+   {
+      printf("Too many alarms! Remove an alarm by typing \"c\" \n");
+      return;
+   }
+   // Timezone crap
    time_t timer = time(NULL);
-   struct tm* currentLocalTimeStruct;
-   struct tm* currentUnixTimeStruct;
+   struct tm *currentLocalTimeStruct;
+   struct tm *currentUnixTimeStruct;
    currentLocalTimeStruct = localtime(&timer);
    currentUnixTimeStruct = gmtime(&timer);
    int daylightFlag = currentLocalTimeStruct->tm_isdst;
    int timeZoneOffset = currentUnixTimeStruct->tm_gmtoff;
-   int totalOffset = (daylight?0:3600)+timeZoneOffset;
+   int totalOffset = (daylight ? 0 : 3600) + timeZoneOffset;
    int currentUnixTime = mktime(currentLocalTimeStruct);
    int currentLocalTime = currentUnixTime + totalOffset;
 
@@ -44,15 +55,15 @@ void schedule()
    char timestring[19];
    struct tm alarmTimeStruct;
 
-   //Load the user input into a time struct
+   // Load the user input into a time struct
    printf("Schedule alarm at which date and time? ");
    scanf("%19[^\n]", timestring);
    strptime(timestring, "%Y-%m-%d %H:%M:%S", &alarmTimeStruct);
 
-   //calculate the timer length in seconds 
+   // calculate the timer length in seconds
    alarmTimeStruct.tm_gmtoff = 0;
    alarmTimeStruct.tm_isdst = 0;
-   time_t alarmUnixTime = mktime(&alarmTimeStruct)-totalOffset;
+   time_t alarmUnixTime = mktime(&alarmTimeStruct) - totalOffset;
    long secondsleft = alarmUnixTime - time(NULL);
 
    empty_stdin();
@@ -71,18 +82,18 @@ void schedule()
    {
       // in parent
       new_alarm.pid = pid;
-      alarms[nextAlarmIndex] = new_alarm;
-      nextAlarmIndex++;
+      alarms[amountOfAlarms] = new_alarm;
+      amountOfAlarms++;
    }
 }
 
 void list()
 {
-   for (size_t i = 0; i < nextAlarmIndex; i++)
+   for (size_t i = 0; i < amountOfAlarms; i++)
    {
       char timestring[30];
       strftime(timestring, 26, "%Y-%m-%d %H:%M:%S", localtime(&alarms[i].end_time));
-      printf("Alarm %ld at %s\n", i+1, timestring);
+      printf("Alarm %ld at %s\n", i + 1, timestring);
    }
 }
 
@@ -93,15 +104,15 @@ void cancel()
    scanf("%d", &cancelledAlarm);
    empty_stdin();
    // Checking if input is in range
-   if (cancelledAlarm < nextAlarmIndex)
+   if (cancelledAlarm < amountOfAlarms)
    {
       kill(alarms[cancelledAlarm].pid, 0);
       // Removing the element from the alarms array
-      for (int i = cancelledAlarm - 1; i < nextAlarmIndex - 1; i++)
+      for (int i = cancelledAlarm - 1; i < amountOfAlarms - 1; i++)
       {
-         alarms[i] = alarms[i + 1]; // assign arr[i+1] to arr[i]
+         alarms[i] = alarms[i + 1];
       }
-      nextAlarmIndex--;
+      amountOfAlarms--;
    }
 }
 
