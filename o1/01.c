@@ -27,7 +27,7 @@ void empty_stdin(void)
 void schedule()
 {
    struct Alarm new_alarm;
-   printf("Schedule alarm at which date and time?\n> ");
+   printf("Schedule alarm at which date and time? (yyyy-mm-dd HH:MM:SS)\n> ");
    char timestring[19];
    struct tm timestruct;
    scanf("%19[^\n]", timestring);
