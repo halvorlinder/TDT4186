@@ -70,7 +70,7 @@ void list()
 void cancel()
 {
    int cancelledAlarm;
-   printf("Cancel which alarm? ");
+   printf("Cancel which alarm?\n> ");
    scanf("%d", &cancelledAlarm);
    empty_stdin();
    // Checking if input is in range
@@ -119,7 +119,7 @@ int main()
          cancel();
          break;
       case 'x':
-         printf("Goodbye!");
+         printf("Goodbye!\n");
          exit(0);
          break;
       }
