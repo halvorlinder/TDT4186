@@ -27,7 +27,7 @@ void empty_stdin(void)
 void schedule()
 {
    struct Alarm new_alarm;
-   printf("Schedule alarm at which date and time? ");
+   printf("Schedule alarm at which date and time?\n> ");
    char timestring[19];
    struct tm timestruct;
    scanf("%19[^\n]", timestring);
@@ -60,7 +60,9 @@ void list()
 {
    for (size_t i = 0; i < nextAlarmIndex; i++)
    {
-      printf("Alarm %ld at %ld\n", i+1, alarms[i].end_time);
+      char timestring[30];
+      strftime(timestring, 26, "%Y-%m-%d %H:%M:%S", localtime(&alarms[i].end_time));
+      printf("Alarm %ld at %s\n", i+1, timestring);
    }
    
 }
@@ -80,12 +82,12 @@ int main()
       timer = time(NULL);
       strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", localtime(&timer));
 
-      printf("It is currently %s \nPlease enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n", buffer);
+      printf("It is currently %s \nPlease enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n> ", buffer);
       char choice = getchar();
       empty_stdin();
       while (choice != 's' && choice != 'l' && choice != 'c' && choice != 'x')
       {
-         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n");
+         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n> ");
          choice = getchar();
          empty_stdin();
       }
