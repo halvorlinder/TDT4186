@@ -43,9 +43,12 @@ void schedule()
    int pid = fork();
    if (pid == 0)
    {
+      char *programName = "mpg123";
+      char *arg1 = "alarm.mp3";
+ 
+      execlp(programName, programName, arg1, NULL);
       sleep(secondsleft);
-      printf("ALARM!");
-      printf("\a");
+      
       exit(0);
    }
    else
