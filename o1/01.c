@@ -25,18 +25,36 @@ void empty_stdin(void)
 
 void schedule()
 {
+   //Timezone crap 
+   time_t timer = time(NULL);
+   struct tm* currentLocalTimeStruct;
+   struct tm* currentUnixTimeStruct;
+   currentLocalTimeStruct = localtime(&timer);
+   currentUnixTimeStruct = gmtime(&timer);
+   int daylightFlag = currentLocalTimeStruct->tm_isdst;
+   int timeZoneOffset = currentUnixTimeStruct->tm_gmtoff;
+   int totalOffset = (daylight?0:3600)+timeZoneOffset;
+   int currentUnixTime = mktime(currentLocalTimeStruct);
+   int currentLocalTime = currentUnixTime + totalOffset;
+
    struct Alarm new_alarm;
-   printf("Schedule alarm at which date and time? ");
    char timestring[19];
-   struct tm timestruct;
+   struct tm alarmTimeStruct;
+
+   //Load the user input into a time struct
+   printf("Schedule alarm at which date and time? ");
    scanf("%19[^\n]", timestring);
-   strptime(timestring, "%Y-%m-%d %H:%M:%S", &timestruct);
-   time_t unixtimestamp = mktime(&timestruct);
-   printf("%ld - %ld + %ld \n", unixtimestamp, time(NULL), timestruct.tm_gmtoff);
-   printf("Without tm_gmtoff: %ld \n", unixtimestamp - time(NULL));
-   long secondsleft = unixtimestamp - time(NULL) + timestruct.tm_gmtoff;
+   strptime(timestring, "%Y-%m-%d %H:%M:%S", &alarmTimeStruct);
+
+   //calculate the timer length in seconds 
+   alarmTimeStruct.tm_gmtoff = 0;
+   alarmTimeStruct.tm_isdst = 0;
+   time_t alarmUnixTime = mktime(&alarmTimeStruct)-totalOffset;
+   long secondsleft = alarmUnixTime - time(NULL);
+
    printf("Setting an alarm in %ld seconds \n", secondsleft);
-   new_alarm.end_time = unixtimestamp;
+   new_alarm.end_time = alarmUnixTime;
+
    int pid = fork();
    if (pid == 0)
    {
