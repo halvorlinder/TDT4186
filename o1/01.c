@@ -22,6 +22,21 @@ enum
 struct Alarm alarms[MAX_ALARMS];
 int amountOfAlarms = 0;
 
+void removeAlarmFromArray(int index) 
+{
+   // Checking if input is in range
+   if (index < amountOfAlarms)
+   {
+      kill(alarms[index].pid, 0);
+      // Removing the element from the alarms array
+      for (int j = index; j < amountOfAlarms; j++)
+      {
+         alarms[j] = alarms[j + 1];
+      }
+      amountOfAlarms--;
+   }
+}
+
 /* Simple helper-function to empty stdin https://stackoverflow.com/a/53059527 */
 void empty_stdin(void)
 {
@@ -72,16 +87,25 @@ void schedule()
 
    int pid = fork();
    if (pid == 0)
-   {
- 
-      
+   {  
       sleep(secondsleft);
       execlp("mpg123", "mpg123", "-q", "alarm.mp3", NULL);
+      // Remove alarm from array
+      for (size_t i = 0; i < amountOfAlarms; i++)
+      {
+         if (alarms[i].pid == getpid())
+         {
+            removeAlarmFromArray(i);
+         }
+         
+      }
+      
       exit(0);
    }
    else
    {
       // in parent
+      // Stop zombies (We ignore exit codes, but oh well)
       signal(SIGCHLD,SIG_IGN);
       new_alarm.pid = pid;
       alarms[amountOfAlarms] = new_alarm;
@@ -91,6 +115,11 @@ void schedule()
 
 void list()
 {
+   if (amountOfAlarms == 0)
+   {
+      printf("No alarms to show!\n");
+   }
+   
    for (size_t i = 0; i < amountOfAlarms; i++)
    {
       char timestring[30];
@@ -105,17 +134,8 @@ void cancel()
    printf("Cancel which alarm?\n> ");
    scanf("%d", &cancelledAlarm);
    empty_stdin();
-   // Checking if input is in range
-   if (cancelledAlarm < amountOfAlarms)
-   {
-      kill(alarms[cancelledAlarm].pid, 0);
-      // Removing the element from the alarms array
-      for (int i = cancelledAlarm - 1; i < amountOfAlarms - 1; i++)
-      {
-         alarms[i] = alarms[i + 1];
-      }
-      amountOfAlarms--;
-   }
+   removeAlarmFromArray(cancelledAlarm - 1);
+   
 }
 
 int main()
