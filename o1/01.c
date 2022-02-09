@@ -1,6 +1,7 @@
 #define __USE_XOPEN ;
 #define _GNU_SOURCE ;
 
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -64,11 +65,25 @@ void list()
       strftime(timestring, 26, "%Y-%m-%d %H:%M:%S", localtime(&alarms[i].end_time));
       printf("Alarm %ld at %s\n", i+1, timestring);
    }
-   
 }
 
 void cancel()
 {
+   int cancelledAlarm;
+   printf("Cancel which alarm? ");
+   scanf("%d", &cancelledAlarm);
+   empty_stdin();
+   // Checking if input is in range
+   if (cancelledAlarm < nextAlarmIndex)
+   {
+      kill(alarms[cancelledAlarm].pid, 0);
+      // Removing the element from the alarms array
+      for (int i = cancelledAlarm - 1; i < nextAlarmIndex - 1; i++)
+      {
+         alarms[i] = alarms[i + 1]; // assign arr[i+1] to arr[i]
+      }
+      nextAlarmIndex--;
+   }
 }
 
 int main()
@@ -104,6 +119,7 @@ int main()
          cancel();
          break;
       case 'x':
+         printf("Goodbye!");
          exit(0);
          break;
       }
