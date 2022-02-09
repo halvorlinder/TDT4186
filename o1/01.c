@@ -73,17 +73,16 @@ void schedule()
    int pid = fork();
    if (pid == 0)
    {
-      char *programName = "mpg123";
-      char *arg1 = "alarm.mp3";
  
-      execlp(programName, programName, arg1, NULL);
-      sleep(secondsleft);
       
+      sleep(secondsleft);
+      execlp("mpg123", "mpg123", "-q", "alarm.mp3", NULL);
       exit(0);
    }
    else
    {
       // in parent
+      signal(SIGCHLD,SIG_IGN);
       new_alarm.pid = pid;
       alarms[amountOfAlarms] = new_alarm;
       amountOfAlarms++;
