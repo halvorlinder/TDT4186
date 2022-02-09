@@ -46,7 +46,7 @@ void schedule()
    currentUnixTimeStruct = gmtime(&timer);
    int daylightFlag = currentLocalTimeStruct->tm_isdst;
    int timeZoneOffset = currentUnixTimeStruct->tm_gmtoff;
-   int totalOffset = (daylight ? 0 : 3600) + timeZoneOffset;
+   int totalOffset = (daylightFlag ? 3600 : 0) + timeZoneOffset;
    int currentUnixTime = mktime(currentLocalTimeStruct);
    int currentLocalTime = currentUnixTime + totalOffset;
 
