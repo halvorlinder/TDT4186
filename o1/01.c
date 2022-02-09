@@ -1,6 +1,7 @@
 #define __USE_XOPEN ;
 #define _GNU_SOURCE ;
 
+#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -13,6 +14,7 @@ struct Alarm
 };
 
 struct Alarm alarms[100];
+int nextAlarmIndex = 0;
 
 /* simple helper-function to empty stdin https://stackoverflow.com/a/53059527*/
 void empty_stdin(void)
@@ -38,6 +40,7 @@ void schedule()
    int currentLocalTime = currentUnixTime + totalOffset;
 
    struct Alarm new_alarm;
+   printf("Schedule alarm at which date and time? (yyyy-mm-dd HH:MM:SS)\n> ");
    char timestring[19];
    struct tm alarmTimeStruct;
 
@@ -52,6 +55,7 @@ void schedule()
    time_t alarmUnixTime = mktime(&alarmTimeStruct)-totalOffset;
    long secondsleft = alarmUnixTime - time(NULL);
 
+   empty_stdin();
    printf("Setting an alarm in %ld seconds \n", secondsleft);
    new_alarm.end_time = alarmUnixTime;
 
@@ -67,15 +71,38 @@ void schedule()
    {
       // in parent
       new_alarm.pid = pid;
+      alarms[nextAlarmIndex] = new_alarm;
+      nextAlarmIndex++;
    }
 }
 
 void list()
 {
+   for (size_t i = 0; i < nextAlarmIndex; i++)
+   {
+      char timestring[30];
+      strftime(timestring, 26, "%Y-%m-%d %H:%M:%S", localtime(&alarms[i].end_time));
+      printf("Alarm %ld at %s\n", i+1, timestring);
+   }
 }
 
 void cancel()
 {
+   int cancelledAlarm;
+   printf("Cancel which alarm?\n> ");
+   scanf("%d", &cancelledAlarm);
+   empty_stdin();
+   // Checking if input is in range
+   if (cancelledAlarm < nextAlarmIndex)
+   {
+      kill(alarms[cancelledAlarm].pid, 0);
+      // Removing the element from the alarms array
+      for (int i = cancelledAlarm - 1; i < nextAlarmIndex - 1; i++)
+      {
+         alarms[i] = alarms[i + 1]; // assign arr[i+1] to arr[i]
+      }
+      nextAlarmIndex--;
+   }
 }
 
 int main()
@@ -89,12 +116,12 @@ int main()
       timer = time(NULL);
       strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", localtime(&timer));
 
-      printf("It is currently %s \n Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n", buffer);
+      printf("It is currently %s \nPlease enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n> ", buffer);
       char choice = getchar();
       empty_stdin();
       while (choice != 's' && choice != 'l' && choice != 'c' && choice != 'x')
       {
-         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n");
+         printf("Please enter \"s\" (schedule), \"l\" (list), \"c\" (cancel), \"x\" (exit)\n> ");
          choice = getchar();
          empty_stdin();
       }
@@ -111,6 +138,7 @@ int main()
          cancel();
          break;
       case 'x':
+         printf("Goodbye!\n");
          exit(0);
          break;
       }
