@@ -8,7 +8,7 @@
 >
 > Describe each test case: what do you do to test this case, what does the test do, what is the expected result?
 
-## Test case 1 - Deleting alarms
+## Test case 1 - Scheduling and deleting alarms
 1. Schedule an alarm sometime in the future.
 2. Listing alarms should return 1 alarm (Alarm 1).
 3. Delete alarm 2.
@@ -27,6 +27,22 @@
 7. Schedule an alarm with a random string (For example "Hello World!").
 8. Listing alarms should return 1 alarm still, as is should be impossible to create an alarm with a random time string.
 
-## Test case 3 - 
+## Test case 3 - Correct ringing
+1. Schedule an alarm sometime in the future.
+2. Wait until the set time. A sound should be played.
+3. Schedule an alarm sometime in the future.
+4. Delete the new alarm.
+5. Wait until the set time. A sound should not be played.
+6. Schedule two alarms to different future time.
+7. Delete the first one.
+8. Wait until the first set time. It should not ring.
+9. Wait unitil the second set time. It should ring.
 
-## Test case 4
+## Test case 4 - Counting processes
+1. Count the processes running this program. It should be excactly one.
+2. Schedule an alarm sometime in the future.
+3. Count the processes running this program. I should be excactly two.
+4. Schedule an alarm sometime after the first alarm.
+5. Count the processes running this program. I should be excactly three.
+6. Wait for the first alarm to ring. The process count should now be two.
+7. Cancel the remaining alarm. The process count should now be one.
