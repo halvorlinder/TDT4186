@@ -1,5 +1,6 @@
 #define __USE_XOPEN ;
 #define _GNU_SOURCE ;
+#define MAX_ALARMS 5
 
 #include <signal.h>
 #include <stdlib.h>
@@ -12,12 +13,6 @@ struct Alarm
 {
    time_t end_time;
    int pid;
-};
-
-/* Enum members are constant expressions, thus anonymous enums will work as constants */
-enum
-{
-   MAX_ALARMS = 5,
 };
 
 struct Alarm alarms[MAX_ALARMS];
