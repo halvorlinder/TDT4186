@@ -110,8 +110,16 @@ void schedule()
    if (pid == 0)
    {
       sleep(seconds_left);
+      // Notify user of alarm depending on their OS
+#ifdef __unix__
       execlp("mpg123", "mpg123", "-q", "alarm.mp3", NULL);
+#elif __APPLE__
+      execlp("afplay", "afplay", "alarm.mp3", NULL);
+#else
+      printf("RING!");
+#endif
    }
+
    else
    {
       // Stop zombies (We ignore exit codes, but oh well)
