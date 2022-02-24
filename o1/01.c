@@ -99,7 +99,7 @@ void schedule()
 
    if (seconds_left < 0)
    {
-      error_message("You cannot go back in time!\n");
+      error_message("Scheduling failed! Make sure the time is in a valid format and not in the past.\n");
       return;
    }
 
