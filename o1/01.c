@@ -30,8 +30,8 @@ void remove_alarm(int index)
    // Check if input is in range
    if (index < active_alarms)
    {
-      kill(alarms[index].pid, 0);
-      // Remove the element from the alarms array
+      kill(alarms[index].pid, SIGKILL);
+      // Remove the alarm element from the array of alarms
       for (size_t j = index; j < active_alarms; j++)
       {
          alarms[j] = alarms[j + 1];
@@ -70,15 +70,9 @@ void schedule()
    }
    // Adjust according to timezones
    time_t timer = time(NULL);
-   struct tm *current_local_time_struct;
-   struct tm *current_unix_time_struct;
-   current_local_time_struct = localtime(&timer);
-   current_unix_time_struct = gmtime(&timer);
-   int daylight_flag = current_local_time_struct->tm_isdst;
-   int timezone_offset = current_unix_time_struct->tm_gmtoff;
+   int daylight_flag = localtime(&timer)->tm_isdst;
+   int timezone_offset = gmtime(&timer)->tm_gmtoff;
    int total_offset = (daylight_flag ? 3600 : 0) + timezone_offset;
-   int current_unix_time = mktime(current_local_time_struct);
-   int current_local_time = current_unix_time + total_offset;
 
    struct Alarm new_alarm;
    printf("Schedule alarm at which date and time? (yyyy-mm-dd HH:MM:SS)\n> ");
@@ -86,7 +80,6 @@ void schedule()
    struct tm alarm_time_struct;
 
    // Load the user input into a time struct
-   printf("Schedule alarm at which date and time? ");
    scanf("%19[^\n]", time_s);
    empty_stdin();
    strptime(time_s, "%Y-%m-%d %H:%M:%S", &alarm_time_struct);
@@ -160,6 +153,17 @@ void cancel()
    remove_alarm(cancelled_alarm - 1);
 }
 
+void exit_program()
+{
+   // Remove alarms that have not been activated
+   while (active_alarms)
+   {
+      remove_alarm(0);
+   }
+   printf("Goodbye!\n");
+   _exit(0);
+}
+
 int main()
 {
    time_t timer;
@@ -195,8 +199,7 @@ int main()
          cancel();
          break;
       case 'x':
-         printf("Goodbye!\n");
-         _exit(0);
+         exit_program();
          break;
       }
    }
