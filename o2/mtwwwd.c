@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -8,6 +9,21 @@
 
 //How many clients can wait for a response at the same time
 #define MAX_QUEUE_SIZE 5
+
+void setResponse(char* response, char* wwwpath) {
+    //Clear response
+    memset(response, 0, 8000);
+
+    //Set header
+    strcat(response, "HTTP/0.9 200 OK\r\n\n");
+
+    //Set body
+    FILE *page = fopen(wwwpath, "r");
+    char line[100];
+    while (fgets(line, 100, page)) {
+        strcat(response, line);
+    }
+}
 
 
 int main( int argc, char *argv[] )  {
@@ -39,11 +55,17 @@ int main( int argc, char *argv[] )  {
         return 1;
     }
     printf("Listening at localhost:%d\n", port);
-
+    
     int clientSocket;
+    char response[8000];
     while(1) {
+        //Send response to client
         clientSocket = accept(serverSocket, NULL, NULL);
-        send(clientSocket, "Hello", 5, 0);
+        // char request[200];
+        // recv(clientSocket, request, sizeof(request), 0);
+        // printf("Request: %s", request);
+        setResponse(response, wwwpath);
+        send(clientSocket, response, sizeof(response), 0);
         close(clientSocket);
     }
     return 0;
