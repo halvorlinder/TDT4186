@@ -16,9 +16,33 @@ void setResponse(char* response, char* wwwpath) {
 
     //Set body
     FILE *page = fopen(wwwpath, "r");
-    char line[100];
-    while (fgets(line, 100, page)) {
-        strcat(response, line);
+    if(page){
+        char line[100];
+        while (fgets(line, 100, page)) {
+            strcat(response, line);
+        }
+    }
+    else{
+        strcat(response, "404 NOT FOUND");
+    }
+}
+
+void set_path(char* request, char* path){
+    int length = 0;
+    int counting = 0;
+    memset(path, 0, 200);
+    for(int i = 0; i<200; i++){
+        if (!counting && request[i]==' '){
+            counting = 1;
+            continue;
+        }
+        else if(counting){
+            if(request[i]==' ' || request[i]=='\n' || request[i]=='\r\n'){
+                return;
+            }
+            path[length] = request[i];
+            length++;
+        }
     }
 }
 
@@ -54,14 +78,21 @@ int main( int argc, char *argv[] )  {
     
     int clientSocket;
     char response[8000];
+    char path[200];
+    char request[200];
+    char full_path[200];
     while(1) {
         //Send response to client
         clientSocket = accept(serverSocket, NULL, NULL);
-        // char request[200];
-        // recv(clientSocket, request, sizeof(request), 0);
-        // printf("Request: %s", request);
-        
-        setResponse(response, wwwpath);
+        recv(clientSocket, request, sizeof(request), 0);
+        printf("\n\n%s\n\n", request);
+        set_path(request, path);
+        puts(path);
+        memset(full_path,'\0' , 200);
+        strcat(full_path, wwwpath);
+        strcat(full_path, path);
+        puts(full_path);
+        setResponse(response, full_path);
         send(clientSocket, response, strlen(response), 0);
         close(clientSocket);
     }
