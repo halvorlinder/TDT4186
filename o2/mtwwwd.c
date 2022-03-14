@@ -14,9 +14,6 @@ void setResponse(char* response, char* wwwpath) {
     //Clear response
     memset(response, 0, 8000);
 
-    //Set header
-    strcat(response, "HTTP/0.9 200 OK\r\n\n");
-
     //Set body
     FILE *page = fopen(wwwpath, "r");
     char line[100];
@@ -34,7 +31,6 @@ int main( int argc, char *argv[] )  {
 
     char* wwwpath = argv[1];
     int port = atoi(argv[2]);
-    printf("Arguments: %s and %d\n", wwwpath, port);
 
     //Create a TCP socket
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -64,8 +60,9 @@ int main( int argc, char *argv[] )  {
         // char request[200];
         // recv(clientSocket, request, sizeof(request), 0);
         // printf("Request: %s", request);
+        
         setResponse(response, wwwpath);
-        send(clientSocket, response, sizeof(response), 0);
+        send(clientSocket, response, strlen(response), 0);
         close(clientSocket);
     }
     return 0;
