@@ -1,3 +1,4 @@
+#include <pthread.h>
 /*
  * Semaphore implementation for the synchronization of POSIX threads.
  *
@@ -10,7 +11,9 @@
  * ...you need to figure out the contents of struct SEM yourself!
  */
 typedef struct SEM {
-
+    pthread_mutex_t count_lock;
+    pthread_cond_t count_nonzero;
+    unsigned int count;
 }SEM;
 
 /* Creates a new semaphore.
@@ -27,9 +30,9 @@ typedef struct SEM {
  *
  * handle for the created semaphore, or NULL if an error occured.
  */
-
 SEM *sem_init(int initVal){
     SEM sem;
+    sem.count = initVal;
     return &sem; 
 }
 
@@ -46,7 +49,6 @@ SEM *sem_init(int initVal){
  * In case of an error, not all resources may have been freed, but 
  * nevertheless the semaphore handle must not be used any more.
  */
-
 int sem_del(SEM *sem){
     return 0;
 }
@@ -61,9 +63,12 @@ int sem_del(SEM *sem){
  *
  * sem           handle of the semaphore to decrement
  */
-
 void P(SEM *sem){
-
+    pthread_mutex_lock(&sem->count_lock);
+    while (sem->count == 0)
+        pthread_cond_wait(&sem->count_nonzero, &sem->count_lock);
+    sem->count -= 1;
+    pthread_mutex_unlock(&sem->count_lock);
 }
 
 /* V (signal) operation.
@@ -75,7 +80,10 @@ void P(SEM *sem){
  *
  * sem           handle of the semaphore to increment
  */
-
 void V(SEM *sem){
-
+    pthread_mutex_lock(&sem->count_lock);
+    if (sem->count == 0)
+        pthread_cond_signal(&sem->count_nonzero);
+    sem->count += 1;
+    pthread_mutex_unlock(&sem->count_lock);
 }
