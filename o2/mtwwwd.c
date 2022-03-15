@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -8,6 +9,42 @@
 
 //How many clients can wait for a response at the same time
 #define MAX_QUEUE_SIZE 5
+
+void setResponse(char* response, char* wwwpath) {
+    //Clear response
+    memset(response, 0, 8000);
+
+    //Set body
+    FILE *page = fopen(wwwpath, "r");
+    if(page){
+        char line[100];
+        while (fgets(line, 100, page)) {
+            strcat(response, line);
+        }
+    }
+    else{
+        strcat(response, "404 NOT FOUND");
+    }
+}
+
+void set_path(char* request, char* path){
+    int length = 0;
+    int counting = 0;
+    memset(path, 0, 200);
+    for(int i = 0; i<200; i++){
+        if (!counting && request[i]==' '){
+            counting = 1;
+            continue;
+        }
+        else if(counting){
+            if(request[i]==' ' || request[i]=='\n' || request[i]=='\r\n'){
+                return;
+            }
+            path[length] = request[i];
+            length++;
+        }
+    }
+}
 
 
 int main( int argc, char *argv[] )  {
@@ -18,7 +55,6 @@ int main( int argc, char *argv[] )  {
 
     char* wwwpath = argv[1];
     int port = atoi(argv[2]);
-    printf("Arguments: %s and %d\n", wwwpath, port);
 
     //Create a TCP socket
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -39,11 +75,25 @@ int main( int argc, char *argv[] )  {
         return 1;
     }
     printf("Listening at localhost:%d\n", port);
-
+    
     int clientSocket;
+    char response[8000];
+    char path[200];
+    char request[200];
+    char full_path[200];
     while(1) {
+        //Send response to client
         clientSocket = accept(serverSocket, NULL, NULL);
-        send(clientSocket, "Hello", 5, 0);
+        recv(clientSocket, request, sizeof(request), 0);
+        printf("\n\n%s\n\n", request);
+        set_path(request, path);
+        puts(path);
+        memset(full_path,'\0' , 200);
+        strcat(full_path, wwwpath);
+        strcat(full_path, path);
+        puts(full_path);
+        setResponse(response, full_path);
+        send(clientSocket, response, strlen(response), 0);
         close(clientSocket);
     }
     return 0;
