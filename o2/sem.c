@@ -32,6 +32,12 @@ typedef struct SEM {
  */
 SEM *sem_init(int initVal){
     SEM sem;
+    if(pthread_mutex_init(&sem.count_lock, NULL) != 0) {
+        return NULL;
+    }
+    if(pthread_cond_init(&sem.count_nonzero, NULL) != 0){
+        return NULL;
+    }
     sem.count = initVal;
     return &sem; 
 }
@@ -50,6 +56,12 @@ SEM *sem_init(int initVal){
  * nevertheless the semaphore handle must not be used any more.
  */
 int sem_del(SEM *sem){
+    if(pthread_mutex_destroy(&sem->count_lock) != 0) {
+        return -1;
+    }
+    if(pthread_cond_destroy(&sem->count_nonzero) != 0) {
+        return -1;
+    }
     return 0;
 }
 
