@@ -2,10 +2,10 @@
 #define ____BBUFFER___H___
 
 /*
- * Bounded Buffer implementation to manage int values that supports multiple 
+ * Bounded Buffer implementation to manage int values that supports multiple
  * readers and writers.
  *
- * The bbuffer module uses the sem module API to synchronize concurrent access 
+ * The bbuffer module uses the sem module API to synchronize concurrent access
  * of readers and writers to the bounded buffer.
  */
 
@@ -15,11 +15,11 @@
 
 typedef struct BNDBUF BNDBUF;
 
-/* Creates a new Bounded Buffer. 
+/* Creates a new Bounded Buffer.
  *
- * This function creates a new bounded buffer and all the helper data 
- * structures required by the buffer, including semaphores for 
- * synchronization. If an error occurs during the initialization the 
+ * This function creates a new bounded buffer and all the helper data
+ * structures required by the buffer, including semaphores for
+ * synchronization. If an error occurs during the initialization the
  * implementation shall free all resources already allocated by then.
  *
  * Parameters:
@@ -33,7 +33,7 @@ typedef struct BNDBUF BNDBUF;
 
 BNDBUF *bb_init(unsigned int size);
 
-/* Destroys a Bounded Buffer. 
+/* Destroys a Bounded Buffer.
  *
  * All resources associated with the bounded buffer are released.
  *
@@ -46,8 +46,8 @@ void bb_del(BNDBUF *bb);
 
 /* Retrieve an element from the bounded buffer.
  *
- * This function removes an element from the bounded buffer. If the bounded 
- * buffer is empty, the function blocks until an element is added to the 
+ * This function removes an element from the bounded buffer. If the bounded
+ * buffer is empty, the function blocks until an element is added to the
  * buffer.
  *
  * Parameters:
@@ -59,12 +59,12 @@ void bb_del(BNDBUF *bb);
  * the int element
  */
 
-int  bb_get(BNDBUF *bb);
+int bb_get(BNDBUF *bb);
 
-/* Add an element to the bounded buffer. 
+/* Add an element to the bounded buffer.
  *
- * This function adds an element to the bounded buffer. If the bounded 
- * buffer is full, the function blocks until an element is removed from 
+ * This function adds an element to the bounded buffer. If the bounded
+ * buffer is full, the function blocks until an element is removed from
  * the buffer.
  *
  * Parameters:
