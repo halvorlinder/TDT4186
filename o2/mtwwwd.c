@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <bbuffer.h>
+#include "bbuffer.h"
 #include <pthread.h>
 
 // How many clients can wait for a response at the same time
@@ -14,24 +14,27 @@
 
 void setResponse(char *response, char *wwwpath)
 {
-    strcat(response, itoa(pthread_self()))
         // Clear response
-        memset(response, 0, 8000);
+    memset(response, 0, 8000);
+
+    char* thread_id;
+    sprintf(thread_id, "%ld", pthread_self());
+    strcat(response, thread_id);
 
     // Set body
-    FILE *page = fopen(wwwpath, "r");
-    if (page)
-    {
-        char line[100];
-        while (fgets(line, 100, page))
-        {
-            strcat(response, line);
-        }
-    }
-    else
-    {
-        strcat(response, "404 NOT FOUND");
-    }
+    // FILE *page = fopen(wwwpath, "r");
+    // if (page)
+    // {
+    //     char line[100];
+    //     while (fgets(line, 100, page))
+    //     {
+    //         strcat(response, line);
+    //     }
+    // }
+    // else
+    // {
+    //     strcat(response, "404 NOT FOUND");
+    // }
 }
 
 void set_path(char *request, char *path)
@@ -58,30 +61,45 @@ void set_path(char *request, char *path)
     }
 }
 
-void worker_function(BNDBUF *bb, char *wwwpath)
+typedef struct THREAD_MESSAGE {
+    BNDBUF *buffer;
+    const char *wwwpath;
+} THREAD_MESSAGE;
+
+void* worker_function(void *message)
 {
+    // puts("\nhalla\n");
+    struct THREAD_MESSAGE* mp = ((struct THREAD_MESSAGE*) message);
+    struct THREAD_MESSAGE m = *mp; 
     char response[8000];
     char path[200];
     char request[200];
     char full_path[200];
-
+    // printf("\nThread %ld\n", pthread_self());
+    BNDBUF* bb = m.buffer;
+    const char* wwwpath = m.wwwpath;
     int clientSocket;
     while (1)
     {
         clientSocket = bb_get(bb);
+        sleep(3);
         recv(clientSocket, request, sizeof(request), 0);
-        printf("\n\n%s\n\n", request);
+        // printf("\n\n%s\n\n", request);
         set_path(request, path);
-        puts(path);
+        // puts(path);
         memset(full_path, '\0', 200);
         strcat(full_path, wwwpath);
         strcat(full_path, path);
-        puts(full_path);
+
+        //For some reason we get a segfault when this line is removed
+        puts(path);
+
         setResponse(response, full_path);
         send(clientSocket, response, strlen(response), 0);
         close(clientSocket);
     }
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -97,13 +115,14 @@ int main(int argc, char *argv[])
     const int buffer_slots = atoi(argv[4]);
 
     // Create a ring buffer
-    struct BNDBUF bb = bb_init(buffer_slots);
-
+    struct BNDBUF* bb = bb_init(buffer_slots);
+    
+    struct THREAD_MESSAGE message = {bb, wwwpath};
     // Create threads
     pthread_t thread_ids[N_THREADS];
-    for (int i = 0; i < threads; i++)
+    for (int i = 0; i < N_THREADS; i++)
     {
-        pthread_create(&thread_ids[i], NULL, worker_function(bb, wwwpath), NULL);
+        pthread_create(&thread_ids[i], NULL, worker_function, (void*)&message);
     }
 
     // Create a TCP socket
