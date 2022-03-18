@@ -1,5 +1,9 @@
 #ifndef ____BBUFFER___H___
 #define ____BBUFFER___H___
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sem.h>
 
 /*
  * Bounded Buffer implementation to manage int values that supports multiple
@@ -13,7 +17,16 @@
  * ...you need to figure out the contents of struct BNDBUF yourself
  */
 
-typedef struct BNDBUF BNDBUF;
+typedef struct BNDBUF
+{
+    unsigned int *buffer_list;
+    unsigned int head;
+    unsigned int tail;
+    SEM *access_sem;
+    SEM *full_sem;
+    SEM *empty_sem;
+    unsigned int size;
+} BNDBUF;
 
 /* Creates a new Bounded Buffer.
  *
@@ -31,7 +44,18 @@ typedef struct BNDBUF BNDBUF;
  * handle for the created bounded buffer, or NULL if an error occured.
  */
 
-BNDBUF *bb_init(unsigned int size);
+BNDBUF *bb_init(unsigned int size)
+{
+    BNDBUF buff;
+    uint8_t *buffer_list = malloc(size);
+    buff.buffer_list = buffer_list;
+    buff.access_sem = sem_init(1);
+    buff.full_sem = sem_init(size);
+    buff.empty_sem = sem_init(0);
+    buff.head = 0;
+    buff.tail = 0;
+    buff.size = size;
+}
 
 /* Destroys a Bounded Buffer.
  *
@@ -42,7 +66,14 @@ BNDBUF *bb_init(unsigned int size);
  * bb       Handle of the bounded buffer that shall be freed.
  */
 
-void bb_del(BNDBUF *bb);
+void bb_del(BNDBUF *bb)
+{
+    free(bb->buffer_list);
+    free(bb->access_sem);
+    free(bb->full_sem);
+    free(bb->empty_sem);
+    free(bb);
+}
 
 /* Retrieve an element from the bounded buffer.
  *
@@ -59,7 +90,16 @@ void bb_del(BNDBUF *bb);
  * the int element
  */
 
-int bb_get(BNDBUF *bb);
+int bb_get(BNDBUF *bb)
+{
+    P(bb->empty_sem);
+    P(bb->access_sem);
+    const int socket = bb->bbuffer_list[bb->head];
+    bb->head = (bb->head + 1) % bb->size;
+    V(bb->full_sem);
+    V(bb->access_sem);
+    return socket;
+}
 
 /* Add an element to the bounded buffer.
  *
@@ -77,6 +117,15 @@ int bb_get(BNDBUF *bb);
  * the int element
  */
 
-void bb_add(BNDBUF *bb, int fd);
+void bb_add(BNDBUF *bb, int fd)
+{
+    P(bb->full_sem);
+    P(bb->access_sem);
+    bb->buffer_list[bb->tail] = fd;
+    bb->tail = (bb->tail + 1) % bb->size;
+    V(bb->empty_sem);
+    V(bb->access_sem);
+    return 0;
+}
 
 #endif
