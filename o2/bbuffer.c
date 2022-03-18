@@ -1,5 +1,9 @@
 #ifndef ____BBUFFER___H___
 #define ____BBUFFER___H___
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sem.h>
 
 /*
  * Bounded Buffer implementation to manage int values that supports multiple 
@@ -14,7 +18,13 @@
  */
 
 typedef struct BNDBUF {
-    
+    uint8_t* buffer_list;
+	size_t head;
+	size_t tail;
+    SEM* access_sem;
+    SEM* full_sem;
+    SEM* empty_sem;
+    SEM* size;
 }
 BNDBUF;
 
@@ -34,7 +44,17 @@ BNDBUF;
  * handle for the created bounded buffer, or NULL if an error occured.
  */
 
-BNDBUF *bb_init(unsigned int size);
+BNDBUF *bb_init(unsigned int size){
+   BNDBUF buff;
+   uint8_t* buffer_list = malloc(size);
+   buff.buffer_list = buffer_list;
+   buff.access_sem = sem_init(1);
+   buff.full_sem = sem_init(size);
+   buff.empty_sem = sem_init(0);
+   buff.head = 0;
+   buff.tail = 0;
+   buff.size = size;
+}
 
 /* Destroys a Bounded Buffer. 
  *
@@ -45,7 +65,13 @@ BNDBUF *bb_init(unsigned int size);
  * bb       Handle of the bounded buffer that shall be freed.
  */
 
-void bb_del(BNDBUF *bb);
+void bb_del(BNDBUF *bb){
+    free(bb->access_sem);
+    free(bb->full_sem);
+    free(bb->empty_sem);
+    free(bb->buffer_list);
+    free(bb);
+}
 
 /* Retrieve an element from the bounded buffer.
  *
@@ -62,7 +88,9 @@ void bb_del(BNDBUF *bb);
  * the int element
  */
 
-int  bb_get(BNDBUF *bb);
+int  bb_get(BNDBUF *bb){
+    if (bb->head==bb->tail);
+}
 
 /* Add an element to the bounded buffer. 
  *
