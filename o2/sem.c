@@ -1,4 +1,8 @@
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h> 
+
 /*
  * Semaphore implementation for the synchronization of POSIX threads.
  *
@@ -33,17 +37,17 @@ typedef struct SEM
  */
 SEM *sem_init(int initVal)
 {
-    SEM sem;
-    if (pthread_mutex_init(&sem.count_lock, NULL) != 0)
+    SEM* sem = (SEM*)malloc(sizeof(SEM));
+    if (pthread_mutex_init(&(sem->count_lock), NULL) != 0)
     {
         return NULL;
     }
-    if (pthread_cond_init(&sem.count_nonzero, NULL) != 0)
+    if (pthread_cond_init(&(sem->count_nonzero), NULL) != 0)
     {
         return NULL;
     }
-    sem.count = initVal;
-    return &sem;
+    sem->count = initVal;
+    return sem;
 }
 
 /* Destroys a semaphore and frees all associated resources.
