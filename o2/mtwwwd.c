@@ -12,10 +12,22 @@
 // How many clients can wait for a response at the same time
 #define MAX_QUEUE_SIZE 5
 
-void setResponse(char *response, char *wwwpath)
+// The maximum size of a given file path
+#define MAX_PATH_SIZE 200
+
+// The maximum size of a HTTP response
+#define MAX_RESPONSE_SIZE 8000
+
+/*!
+ * Set the content of the HTTP response that is to be sent
+ *
+ * @param response is the HTTP response we wish to set
+ * @param wwwpath is the path to the index.html file, containing the page to be set in the response
+ */
+void set_response(char *response, char *wwwpath)
 {
     // Clear response
-    memset(response, 0, 8000);
+    memset(response, 0, MAX_RESPONSE_SIZE);
 
     // char* thread_id;
     // sprintf(thread_id, "%ld", pthread_self());
@@ -37,21 +49,27 @@ void setResponse(char *response, char *wwwpath)
     }
 }
 
+/*!
+ * Extract and set the file path from a given HTTP request
+ *
+ * @param request is the HTTP request containing the path
+ * @param path is the referance to the path we wish to update accordingly to our given request
+ */
 void set_path(char *request, char *path)
 {
     int length = 0;
     int counting = 0;
-    memset(path, 0, 200);
-    for (int i = 0; i < 200; i++)
+    memset(path, 0, MAX_PATH_SIZE);
+    for (int i = 0; i < MAX_PATH_SIZE; i++)
     {
+        // char request_i = request[i];
         if (!counting && request[i] == ' ')
         {
             counting = 1;
-            continue;
         }
         else if (counting)
         {
-            if (request[i] == ' ' || request[i] == '\n' || request[i] == '\r\n')
+            if (request[i] == ' ' || request[i] == '\n' || request[i] == '\r')
             {
                 return;
             }
@@ -70,10 +88,10 @@ void* worker_function(void *message)
 {
     struct THREAD_MESSAGE* mp = ((struct THREAD_MESSAGE*) message);
     struct THREAD_MESSAGE m = *mp; 
-    char response[8000];
-    char path[200];
-    char request[200];
-    char full_path[200];
+    char response[MAX_RESPONSE_SIZE];
+    char path[MAX_PATH_SIZE];
+    char request[MAX_PATH_SIZE];
+    char full_path[MAX_PATH_SIZE];
     BNDBUF* bb = m.buffer;
     const char* wwwpath = m.wwwpath;
     int clientSocket;
@@ -82,11 +100,11 @@ void* worker_function(void *message)
         clientSocket = bb_get(bb);
         recv(clientSocket, request, sizeof(request), 0);
         set_path(request, path);
-        memset(full_path, '\0', 200);
+        memset(full_path, '\0', MAX_PATH_SIZE);
         strcat(full_path, wwwpath);
         strcat(full_path, path);
 
-        setResponse(response, full_path);
+        set_response(response, full_path);
         send(clientSocket, response, strlen(response), 0);
         close(clientSocket);
     }
@@ -139,7 +157,6 @@ int main(int argc, char *argv[])
     printf("Listening at localhost:%d\n", port);
 
     int clientSocket;
-
     while (1)
     {
         clientSocket = accept(serverSocket, NULL, NULL);
