@@ -112,3 +112,42 @@ void V(SEM *sem)
     sem->count += 1;
     pthread_mutex_unlock(&sem->count_lock);
 }
+
+
+// The code below is test code to ensure that the semaphores are working correctly
+
+// typedef struct s{
+//     long* sum_ptr;
+//     SEM* sem;
+// } s;
+// void* worker_function(void* s_ptr){
+//     s* str = (s*)(s_ptr);
+//     long* sum = str->sum_ptr;
+//     SEM* sem = str->sem;
+//     for(int i = 0; i<10000; i++){
+//         P(sem);
+//         long sum2 = *sum;
+//         sum2+=i;
+//         *sum = sum2;
+//         V(sem);
+//     }
+//     return NULL;
+// }
+
+
+// int main(int argc, char *argv[]){
+//     long sum = 0;
+//     int n = 20;
+//     SEM* sem = sem_init(1);
+//     s str = {&sum, sem};
+//     pthread_t thread_ids[n];
+//     for (int i = 0; i < n; i++)
+//     {
+//         pthread_create(&thread_ids[i], NULL, worker_function, &str);
+//     }
+//     for (int i = 0; i < n; i++)
+//        pthread_join(thread_ids[i], NULL);
+    
+//     printf("%ld\n",sum);
+//     return 0;
+// }
