@@ -67,13 +67,13 @@ int main(int argc, char *argv[])
     int port = atoi(argv[2]);
 
     // Create a TCP socket
-    int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    int serverSocket = socket(AF_INET6, SOCK_STREAM, 0);
 
     // Setup address: localhost:port
-    struct sockaddr_in address;
-    address.sin_family = AF_INET;
-    address.sin_port = htons(port);
-    address.sin_addr.s_addr = inet_addr("127.0.0.1");
+    struct sockaddr_in6 address;
+    address.sin6_family = AF_INET6;
+    address.sin6_port = htons(port);
+    address.sin6_addr = in6addr_loopback;
 
     // Bind the address to the socket
     bind(serverSocket, (struct sockaddr *)&address, sizeof(address));
