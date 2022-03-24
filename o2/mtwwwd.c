@@ -79,13 +79,16 @@ void set_path(char *request, char *path)
     }
 }
 
+//Struct that gets passed to the threads
 typedef struct THREAD_MESSAGE {
     BNDBUF *buffer;
     const char *wwwpath;
 } THREAD_MESSAGE;
 
+//Function that executes on each thread
 void* worker_function(void *message)
 {
+    //Initialize buffers and extract data from the struct 
     struct THREAD_MESSAGE* mp = ((struct THREAD_MESSAGE*) message);
     struct THREAD_MESSAGE m = *mp; 
     char response[MAX_RESPONSE_SIZE];
@@ -95,6 +98,7 @@ void* worker_function(void *message)
     BNDBUF* bb = m.buffer;
     const char* wwwpath = m.wwwpath;
     int clientSocket;
+    //Try to get a file descriptor from the buffer and handle the request
     while (1)
     {
         clientSocket = bb_get(bb);
@@ -113,6 +117,7 @@ void* worker_function(void *message)
 
 int main(int argc, char *argv[])
 {
+    //Parse arguments
     if (argc != 5)
     {
         printf("Four arguments expected.\n");
@@ -157,6 +162,7 @@ int main(int argc, char *argv[])
     printf("Listening at localhost:%d\n", port);
 
     int clientSocket;
+    //Accept incoming requests and add their file descriptors to the buffer 
     while (1)
     {
         clientSocket = accept(serverSocket, NULL, NULL);
