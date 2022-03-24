@@ -80,7 +80,6 @@ void* worker_function(void *message)
     while (1)
     {
         clientSocket = bb_get(bb);
-        sleep(3);
         recv(clientSocket, request, sizeof(request), 0);
         set_path(request, path);
         memset(full_path, '\0', 200);
