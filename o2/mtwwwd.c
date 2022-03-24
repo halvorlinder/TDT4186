@@ -14,27 +14,27 @@
 
 void setResponse(char *response, char *wwwpath)
 {
-        // Clear response
+    // Clear response
     memset(response, 0, 8000);
 
-    char* thread_id;
-    sprintf(thread_id, "%ld", pthread_self());
-    strcat(response, thread_id);
+    // char* thread_id;
+    // sprintf(thread_id, "%ld", pthread_self());
+    // strcat(response, thread_id);
 
-    // Set body
-    // FILE *page = fopen(wwwpath, "r");
-    // if (page)
-    // {
-    //     char line[100];
-    //     while (fgets(line, 100, page))
-    //     {
-    //         strcat(response, line);
-    //     }
-    // }
-    // else
-    // {
-    //     strcat(response, "404 NOT FOUND");
-    // }
+    //Set body
+    FILE *page = fopen(wwwpath, "r");
+    if (page)
+    {
+        char line[100];
+        while (fgets(line, 100, page))
+        {
+            strcat(response, line);
+        }
+    }
+    else
+    {
+        strcat(response, "404 NOT FOUND");
+    }
 }
 
 void set_path(char *request, char *path)
@@ -68,14 +68,12 @@ typedef struct THREAD_MESSAGE {
 
 void* worker_function(void *message)
 {
-    // puts("\nhalla\n");
     struct THREAD_MESSAGE* mp = ((struct THREAD_MESSAGE*) message);
     struct THREAD_MESSAGE m = *mp; 
     char response[8000];
     char path[200];
     char request[200];
     char full_path[200];
-    // printf("\nThread %ld\n", pthread_self());
     BNDBUF* bb = m.buffer;
     const char* wwwpath = m.wwwpath;
     int clientSocket;
@@ -84,9 +82,7 @@ void* worker_function(void *message)
         clientSocket = bb_get(bb);
         sleep(3);
         recv(clientSocket, request, sizeof(request), 0);
-        // printf("\n\n%s\n\n", request);
         set_path(request, path);
-        // puts(path);
         memset(full_path, '\0', 200);
         strcat(full_path, wwwpath);
         strcat(full_path, path);
