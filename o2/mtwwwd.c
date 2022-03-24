@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "bbuffer.h"
+#include <pthread.h>
 
 // How many clients can wait for a response at the same time
 #define MAX_QUEUE_SIZE 5
@@ -15,7 +17,11 @@ void setResponse(char *response, char *wwwpath)
     // Clear response
     memset(response, 0, 8000);
 
-    // Set body
+    // char* thread_id;
+    // sprintf(thread_id, "%ld", pthread_self());
+    // strcat(response, thread_id);
+
+    //Set body
     FILE *page = fopen(wwwpath, "r");
     if (page)
     {
@@ -55,16 +61,61 @@ void set_path(char *request, char *path)
     }
 }
 
+typedef struct THREAD_MESSAGE {
+    BNDBUF *buffer;
+    const char *wwwpath;
+} THREAD_MESSAGE;
+
+void* worker_function(void *message)
+{
+    struct THREAD_MESSAGE* mp = ((struct THREAD_MESSAGE*) message);
+    struct THREAD_MESSAGE m = *mp; 
+    char response[8000];
+    char path[200];
+    char request[200];
+    char full_path[200];
+    BNDBUF* bb = m.buffer;
+    const char* wwwpath = m.wwwpath;
+    int clientSocket;
+    while (1)
+    {
+        clientSocket = bb_get(bb);
+        recv(clientSocket, request, sizeof(request), 0);
+        set_path(request, path);
+        memset(full_path, '\0', 200);
+        strcat(full_path, wwwpath);
+        strcat(full_path, path);
+
+        setResponse(response, full_path);
+        send(clientSocket, response, strlen(response), 0);
+        close(clientSocket);
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
-    if (argc != 3)
+    if (argc != 5)
     {
-        printf("Two arguments expected.\n");
+        printf("Four arguments expected.\n");
         exit(0);
     }
 
-    char *wwwpath = argv[1];
-    int port = atoi(argv[2]);
+    const char *wwwpath = argv[1];
+    const int port = atoi(argv[2]);
+    const int N_THREADS = atoi(argv[3]);
+    const int buffer_slots = atoi(argv[4]);
+
+    // Create a ring buffer
+    struct BNDBUF* bb = bb_init(buffer_slots);
+    
+    struct THREAD_MESSAGE message = {bb, wwwpath};
+    // Create threads
+    pthread_t thread_ids[N_THREADS];
+    for (int i = 0; i < N_THREADS; i++)
+    {
+        pthread_create(&thread_ids[i], NULL, worker_function, (void*)&message);
+    }
 
     // Create a TCP socket
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -88,25 +139,12 @@ int main(int argc, char *argv[])
     printf("Listening at localhost:%d\n", port);
 
     int clientSocket;
-    char response[8000];
-    char path[200];
-    char request[200];
-    char full_path[200];
+
     while (1)
     {
-        // Send response to client
         clientSocket = accept(serverSocket, NULL, NULL);
-        recv(clientSocket, request, sizeof(request), 0);
-        printf("\n\n%s\n\n", request);
-        set_path(request, path);
-        puts(path);
-        memset(full_path, '\0', 200);
-        strcat(full_path, wwwpath);
-        strcat(full_path, path);
-        puts(full_path);
-        setResponse(response, full_path);
-        send(clientSocket, response, strlen(response), 0);
-        close(clientSocket);
+        bb_add(bb, clientSocket);
     }
+
     return 0;
 }

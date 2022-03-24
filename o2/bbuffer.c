@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sem.h>
+#include "sem.h"
 
 /*
  * Bounded Buffer implementation to manage int values that supports multiple
@@ -46,15 +46,16 @@ typedef struct BNDBUF
 
 BNDBUF *bb_init(unsigned int size)
 {
-    BNDBUF buff;
-    uint8_t *buffer_list = malloc(size);
-    buff.buffer_list = buffer_list;
-    buff.access_sem = sem_init(1);
-    buff.full_sem = sem_init(size);
-    buff.empty_sem = sem_init(0);
-    buff.head = 0;
-    buff.tail = 0;
-    buff.size = size;
+    BNDBUF* buff = malloc(sizeof(BNDBUF));
+    unsigned int *buffer_list = malloc(size);
+    buff->buffer_list = buffer_list;
+    buff->access_sem = sem_init(1);
+    buff->full_sem = sem_init(size);
+    buff->empty_sem = sem_init(0);
+    buff->head = 0;
+    buff->tail = 0;
+    buff->size = size;
+    return buff;
 }
 
 /* Destroys a Bounded Buffer.
@@ -94,7 +95,7 @@ int bb_get(BNDBUF *bb)
 {
     P(bb->empty_sem);
     P(bb->access_sem);
-    const int socket = bb->bbuffer_list[bb->head];
+    int socket = bb->buffer_list[bb->head];
     bb->head = (bb->head + 1) % bb->size;
     V(bb->full_sem);
     V(bb->access_sem);
@@ -125,7 +126,6 @@ void bb_add(BNDBUF *bb, int fd)
     bb->tail = (bb->tail + 1) % bb->size;
     V(bb->empty_sem);
     V(bb->access_sem);
-    return 0;
 }
 
 #endif
