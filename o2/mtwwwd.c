@@ -86,9 +86,6 @@ void* worker_function(void *message)
         strcat(full_path, wwwpath);
         strcat(full_path, path);
 
-        //For some reason we get a segfault when this line is removed
-        puts(path);
-
         setResponse(response, full_path);
         send(clientSocket, response, strlen(response), 0);
         close(clientSocket);
