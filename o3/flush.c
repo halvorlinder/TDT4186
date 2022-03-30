@@ -15,6 +15,10 @@ int main(int argc, char const *argv[])
     char args[MAX_ARGS][MAX_ARG_LENGTH];
     char raw_input[MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH];
     char command[MAX_COMMAND_LENGTH];
+<<<<<<< HEAD
+=======
+
+>>>>>>> Add docs and format
     while (1)
     {
         for (int i = 0; i < MAX_ARGS; i++)
@@ -23,12 +27,20 @@ int main(int argc, char const *argv[])
         }
         memset(raw_input, 0, MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
         memset(command, 0, MAX_COMMAND_LENGTH);
-        getcwd(dir, 200);
+
+        // Print current working directory
+        getcwd(dir, MAX_PATH);
         printf("%s:", dir);
+
+        // Get input from user, and extract the first "word", also called a token
         fgets(raw_input, MAX_COMMAND_LENGTH + MAX_ARGS + MAX_ARG_LENGTH, stdin);
         char *token = strtok(raw_input, " ");
-        strcpy(command, token);
-        token = strtok(NULL, " ");
+
+        // Set command equal to the token's executable binary in /bin/
+        strcpy(command, "/bin/");
+        strcat(command, token);
+
+        token = strtok(NULL, " "); // strtok() remembers raw_input, thus by applying NULL we get the next token
         int i = 0;
         while (token != NULL)
         {
@@ -50,5 +62,6 @@ int main(int argc, char const *argv[])
             printf("Exit status: %d\n", status);
         }
     }
+
     return 0;
 }
