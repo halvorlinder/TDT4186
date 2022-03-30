@@ -9,12 +9,25 @@
 #define MAX_ARG_LENGTH 40
 #define MAX_COMMAND_LENGTH 10
 
+void change_dir(char *cwd, char *input)
+{
+    if (!input[0])
+    {
+        chdir(getenv("HOME"));
+    }
+    else
+    {
+        chdir(input);
+    }
+}
+
 int main(int argc, char const *argv[])
 {
     char dir[MAX_PATH];
     char args[MAX_ARGS][MAX_ARG_LENGTH];
     char raw_input[MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH];
     char command[MAX_COMMAND_LENGTH];
+
     while (1)
     {
         for (int i = 0; i < MAX_ARGS; i++)
@@ -23,12 +36,21 @@ int main(int argc, char const *argv[])
         }
         memset(raw_input, 0, MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
         memset(command, 0, MAX_COMMAND_LENGTH);
-        getcwd(dir, 200);
-        printf("%s:", dir);
+
+        // Print current working directory
+        getcwd(dir, MAX_PATH);
+        printf("%s: ", dir);
+
+        // Get input from user, and extract the first "word", also called a token
         fgets(raw_input, MAX_COMMAND_LENGTH + MAX_ARGS + MAX_ARG_LENGTH, stdin);
+        raw_input[strcspn(raw_input, "\n")] = 0;
+
         char *token = strtok(raw_input, " ");
+
+        // Set command equal to the token, should be equal to the executable binary in /bin/
         strcpy(command, token);
-        token = strtok(NULL, " ");
+
+        token = strtok(NULL, " "); // strtok() remembers raw_input, thus by applying NULL we get the next token
         int i = 0;
         while (token != NULL)
         {
@@ -37,18 +59,26 @@ int main(int argc, char const *argv[])
             i++;
         }
 
-        int status;
-        int pid = fork();
-        if (pid == 0)
+        if (!strcmp(command, "cd"))
         {
-            execl(command, command, args, NULL);
-            _exit(0);
+            change_dir(dir, args[0]);
         }
         else
         {
-            waitpid(pid, &status, 0);
-            printf("Exit status: %d\n", status);
+            int status;
+            int pid = fork();
+            if (pid == 0)
+            {
+                execl(command, command, args, NULL);
+                _exit(0);
+            }
+            else
+            {
+                waitpid(pid, &status, 0);
+                printf("Exit status: %d\n", status);
+            }
         }
     }
+
     return 0;
 }
