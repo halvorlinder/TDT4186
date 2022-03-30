@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
+
 
 #define MAX_PATH 200
 #define MAX_ARGS 20
 #define MAX_ARG_LENGTH 40
-#define MAX_COMMAND_LENGTH 40
+#define MAX_COMMAND_LENGTH 10
 
 int main(int argc, char const *argv[])
 {
@@ -14,7 +16,6 @@ int main(int argc, char const *argv[])
     char args[MAX_ARGS][MAX_ARG_LENGTH];
     char raw_input[MAX_COMMAND_LENGTH+MAX_ARGS*MAX_ARG_LENGTH];
     char command[MAX_COMMAND_LENGTH];
-    char arg[MAX_ARG_LENGTH];
     while(1){
         for(int i = 0; i<MAX_ARGS; i++){
             memset(args[i], 0, MAX_ARG_LENGTH);
@@ -24,18 +25,26 @@ int main(int argc, char const *argv[])
         getcwd(dir, 200);
         printf("%s:",dir);
         fgets(raw_input, MAX_COMMAND_LENGTH+MAX_ARGS+MAX_ARG_LENGTH, stdin);
-        strcpy(command, strtok(raw_input, " "));
-        strcpy(arg, strtok(raw_input, " "));
+        char* token = strtok(raw_input, " ");
+        strcpy(command,"/bin/");
+        strcat(command, token);
+        token = strtok(NULL, " ");
         int i = 0;
-        while(arg!=NULL){
-            strcpy(args[i], arg);
-            strcpy(arg, strtok(raw_input, " "));
+        while(token!=NULL){
+            strcpy(args[i], token);
+            token = strtok(NULL, " ");
             i++;
         }
-        printf("%s\n", command);
-        //for(int i = 0; i<MAX_ARGS; i++)
-            //printf("%s\n", *(args[i]));
-        
+        // printf("Command: %s\n", command);
+        // for(int i = 0; i<MAX_ARGS; i++)
+        //     printf("Arg %d: %s \n", i, args[i]);
+        int pid = fork();
+        if(pid==0){
+           execl(command, command, args, NULL);            
+        }
+        else{
+            waitpid(pid, NULL, 0);
+        }
 
     }
     return 0;
