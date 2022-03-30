@@ -11,7 +11,7 @@
 
 void change_dir(char *cwd, char *input)
 {
-    if (!input[0])
+    if (!input)
     {
         chdir(getenv("HOME"));
     }
@@ -26,17 +26,9 @@ int main(int argc, char const *argv[])
     char dir[MAX_PATH];
     char args[MAX_ARGS][MAX_ARG_LENGTH];
     char raw_input[MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH];
-    char command[MAX_COMMAND_LENGTH];
 
     while (1)
     {
-        for (int i = 0; i < MAX_ARGS; i++)
-        {
-            memset(args[i], 0, MAX_ARG_LENGTH);
-        }
-        memset(raw_input, 0, MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
-        memset(command, 0, MAX_COMMAND_LENGTH);
-
         // Print current working directory
         getcwd(dir, MAX_PATH);
         printf("%s: ", dir);
@@ -47,10 +39,6 @@ int main(int argc, char const *argv[])
 
         char *token = strtok(raw_input, " ");
 
-        // Set command equal to the token, should be equal to the executable binary in /bin/
-        strcpy(command, token);
-
-        token = strtok(NULL, " "); // strtok() remembers raw_input, thus by applying NULL we get the next token
         int i = 0;
         while (token != NULL)
         {
@@ -58,10 +46,18 @@ int main(int argc, char const *argv[])
             token = strtok(NULL, " ");
             i++;
         }
+        
 
-        if (!strcmp(command, "cd"))
+        char* args_cpy[i];
+        for(int j = 0; j<i; j++)
         {
-            change_dir(dir, args[0]);
+            args_cpy[j] = malloc(MAX_ARG_LENGTH);
+            strcpy(args_cpy[j], args[j]);
+        }
+        args_cpy[i] = NULL;
+        if (!strcmp(args_cpy[0], "cd"))
+        {
+            change_dir(dir, args_cpy[1]);
         }
         else
         {
@@ -69,8 +65,8 @@ int main(int argc, char const *argv[])
             int pid = fork();
             if (pid == 0)
             {
-                execl(command, command, args, NULL);
-                _exit(0);
+                status = execv(args_cpy[0], args_cpy);
+                _exit(status);
             }
             else
             {
