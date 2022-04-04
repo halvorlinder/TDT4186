@@ -165,7 +165,7 @@ void execute_cmd()
             if (output_index > 0)
             {
                 strip(output_file_name);
-                int out = open(output_file_name, O_WRONLY);
+                int out = open(output_file_name, O_WRONLY | O_CREAT, S_IRWXU);
                 dup2(out, STDOUT_FILENO);
             }
             // redirect input
