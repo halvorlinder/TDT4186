@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <ctype.h>
 
-
 #define MAX_PATH 200
 #define MAX_ARGS 20
 #define MAX_ARG_LENGTH 40
@@ -25,30 +24,59 @@ void change_dir(char *input)
     }
 }
 
-void strip(char* string){
+// Removes all whitespace around a string
+void strip(char *string)
+{
     int start = -1;
     int end = -1;
-    for(int i = 0; i<strlen(string); i++){
-        if(start==-1 && isspace(string[i])==0){
+    for (int i = 0; i < strlen(string); i++)
+    {
+        if (start == -1 && isspace(string[i]) == 0)
+        {
             start = i;
         }
-        if(!isspace(string[i])){
+        if (!isspace(string[i]))
+        {
             end = i;
-       }
+        }
     }
-    memcpy(string, &string[start], end-start+1);
-    string[end-start+1] = 0;
+    memcpy(string, &string[start], end - start + 1);
+    string[end - start + 1] = 0;
 }
 
 void execute_cmd()
 {
     char raw_input[MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH];
-    
+    // stores the different parrts of the pipeline
+    char *pipes[MAX_PIPELINE_LENGTH];
+    // Allocate mem to strings
+    for (int i = 0; i < MAX_ARG_LENGTH; i++)
+    {
+        pipes[i] = malloc(MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
+    }
+
+    // Take input and strip
     fgets(raw_input, MAX_COMMAND_LENGTH + MAX_ARGS + MAX_ARG_LENGTH, stdin);
     raw_input[strcspn(raw_input, "\n")] = 0;
+    strip(raw_input);
 
+    for (int i = 0; i < MAX_PIPELINE_LENGTH; i++)
+    {
+        memset(pipes[i], 0, MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
+    }
+
+    // parse pipelineparts into array
     char *token_pipe = strtok(raw_input, "|");
+    int i = 0;
     while (token_pipe != NULL)
+    {
+        puts(token_pipe);
+        strcpy(pipes[i], token_pipe);
+        i++;
+        token_pipe = strtok(NULL, "|");
+    }
+    // iterate over all pipelineparts and excecute
+    for (int p = 0; p < i; p++)
     {
         int j = 0;
         int input_index, output_index, end_index;
@@ -63,56 +91,51 @@ void execute_cmd()
         //      change_dir(args_cpy[1]);
         //  }
 
-        //Find the indices of the redirection operators
-        // puts(token_pipe);
+        // Find the indices of the redirection operators
         while (j < MAX_ARG_LENGTH)
         {
-            // printf("%c\n", token_pipe[j]);
-            if (token_pipe[j] == '>')
+            if (pipes[p][j] == '>')
             {
                 output_index = j;
             }
-            else if (token_pipe[j] == '<')
+            else if (pipes[p][j] == '<')
             {
                 input_index = j;
             }
-            else if (token_pipe[j] == 0)
+            else if (pipes[p][j] == 0)
             {
                 end_index = j;
                 break;
             }
             j++;
-            }
-
-        
-        //Get the file names of the input/output files 
+        }
+        // Get the file names of the input/output files
         if (output_index > 0 && input_index > 0)
         {
             if (output_index > input_index)
             {
-                memcpy(input_file_name, &token_pipe[input_index + 1], output_index-input_index-1);
-                memcpy(output_file_name, &token_pipe[output_index + 1], end_index-output_index-1);
+                memcpy(input_file_name, &pipes[p][input_index + 1], output_index - input_index - 1);
+                memcpy(output_file_name, &pipes[p][output_index + 1], end_index - output_index - 1);
             }
             else
             {
-                memcpy(output_file_name, &token_pipe[output_index + 1], input_index-output_index-1);
-                memcpy(input_file_name, &token_pipe[input_index + 1], end_index-input_index-1);
+                memcpy(output_file_name, &pipes[p][output_index + 1], input_index - output_index - 1);
+                memcpy(input_file_name, &pipes[p][input_index + 1], end_index - input_index - 1);
             }
         }
         else if (output_index > 0)
         {
-            memcpy(output_file_name, &token_pipe[output_index + 1], end_index-output_index-1);
+            memcpy(output_file_name, &pipes[p][output_index + 1], end_index - output_index - 1);
         }
         else if (input_index > 0)
         {
-            memcpy(input_file_name, &token_pipe[input_index + 1], end_index-input_index-1);
+            memcpy(input_file_name, &pipes[p][input_index + 1], end_index - input_index - 1);
         }
-        
-        char *command_with_args = strtok(token_pipe, "<>");
-        // printf("command: %s\n",command_with_args);
-        // printf("out: %s\n",output_file_name);
-        // printf("in: %s\n",input_file_name);
-        //Parse the command 
+        char *command_with_args = strtok(pipes[p], "<>");
+        // printf("command: %s\n", command_with_args);
+        // printf("out: %s\n", output_file_name);
+        // printf("in: %s\n", input_file_name);
+        // Parse the command
         char args[MAX_ARGS][MAX_ARG_LENGTH];
         char *token = strtok(command_with_args, " ");
         int i = 0;
@@ -123,6 +146,7 @@ void execute_cmd()
             i++;
         }
 
+        // format the command to be accepted by execvp
         char *args_cpy[i];
         for (int j = 0; j < i; j++)
         {
@@ -132,16 +156,19 @@ void execute_cmd()
 
         args_cpy[i] = NULL;
 
+        // fork a new process to execute the command
         int status;
         int pid = fork();
         if (pid == 0)
         {
+            // redirect output
             if (output_index > 0)
             {
                 strip(output_file_name);
                 int out = open(output_file_name, O_WRONLY);
                 dup2(out, STDOUT_FILENO);
             }
+            // redirect input
             if (input_index > 0)
             {
                 strip(input_file_name);
@@ -161,8 +188,10 @@ void execute_cmd()
         {
             free(args_cpy[j]);
         }
-        i++;
-        token_pipe = strtok(NULL, "|");
+    }
+    for (int i = 0; i < MAX_PIPELINE_LENGTH; i++)
+    {
+        free(pipes[i]);
     }
 }
 
