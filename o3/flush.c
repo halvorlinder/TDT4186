@@ -13,6 +13,11 @@
 #define MAX_COMMAND_LENGTH 10
 #define MAX_PIPELINE_LENGTH 10
 
+struct Background_Process {
+    int pid;
+    char *command_line;
+};
+
 void change_dir(char *input)
 {
     if (!input)
@@ -50,6 +55,7 @@ void execute_cmd()
     char *token_pipe = strtok(raw_input, "|");
     while (token_pipe != NULL)
     {
+        int is_background_process = token_pipe[strlen(token_pipe) - 1] == '&';
         int j = 0;
         int input_index, output_index, end_index;
         input_index = output_index = end_index = -1;
