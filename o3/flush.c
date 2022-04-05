@@ -12,11 +12,22 @@
 #define MAX_ARG_LENGTH 40
 #define MAX_COMMAND_LENGTH 10
 #define MAX_PIPELINE_LENGTH 10
+#define MAX_BACKGROUND_PROCESSES 20
 
 struct Background_Process {
     int pid;
     char *command_line;
 };
+
+struct Background_Process background_processes[MAX_BACKGROUND_PROCESSES];
+int active_background_processes = 0;
+
+void add_background_process (int pid, char *command_line)
+{
+    struct Background_Process new_background_process;
+    new_background_process.pid = pid;
+    new_background_process.command_line = command_line;
+}
 
 void change_dir(char *input)
 {
@@ -156,6 +167,10 @@ void execute_cmd()
             }
             status = execvp(args_cpy[0], args_cpy);
             _exit(status);
+        }
+        else if (is_background_process)
+        {
+
         }
         else
         {
