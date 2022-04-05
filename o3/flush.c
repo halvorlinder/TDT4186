@@ -55,6 +55,13 @@ void execute_cmd()
         pipes[i] = malloc(MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
     }
 
+    // int *pipefds[MAX_PIPELINE_LENGTH - 1];
+    // for (int i = 0; i < MAX_PIPELINE_LENGTH - 1; i++)
+    // {
+    //     pipefds[i] = malloc(sizeof(int) * 2);
+    // }
+    int pipefds[MAX_PIPELINE_LENGTH-1][2];
+
     // Take input and strip
     fgets(raw_input, MAX_COMMAND_LENGTH + MAX_ARGS + MAX_ARG_LENGTH, stdin);
     raw_input[strcspn(raw_input, "\n")] = 0;
@@ -70,7 +77,7 @@ void execute_cmd()
     int i = 0;
     while (token_pipe != NULL)
     {
-        puts(token_pipe);
+        pipe(pipefds[i]);
         strcpy(pipes[i], token_pipe);
         i++;
         token_pipe = strtok(NULL, "|");
@@ -78,6 +85,12 @@ void execute_cmd()
     // iterate over all pipelineparts and excecute
     for (int p = 0; p < i; p++)
     {
+        // if (i > 1)
+        // {
+        //     if (p < i - 1)
+        //         pipe(pipefds[i]);
+        // }
+        int pipe_length = i;
         int j = 0;
         int input_index, output_index, end_index;
         input_index = output_index = end_index = -1;
@@ -175,11 +188,42 @@ void execute_cmd()
                 int in = open(input_file_name, O_RDONLY);
                 dup2(in, STDIN_FILENO);
             }
+            // printf("%d\n", pipe_length);
+            // handle pipeline redirection if there are pipes
+            if (pipe_length > 1)
+            {
+                // printf("fds: %d, %d, %d, %d\n", pipefds[p - 1][0], pipefds[p - 1][1], pipefds[p][0], pipefds[p][1]);
+                // puts(command_with_args);
+                if (p > 0)
+                {
+                    dup2(pipefds[p - 1][0], 0);
+                }
+                if (p < pipe_length - 1)
+                {
+                    dup2(pipefds[p][1], 1);
+                }
+                if (p > 0)
+                {
+                    // puts("hello1");
+                    close(pipefds[p - 1][0]);
+                    close(pipefds[p - 1][1]);
+                }
+                if (p < pipe_length - 1)
+                {
+                    // puts("hallo2");
+                    close(pipefds[p][0]);
+                    close(pipefds[p][1]);
+                }
+            }
             status = execvp(args_cpy[0], args_cpy);
             _exit(status);
         }
-        else
+        else if(p==pipe_length-1)
         {
+            for(int i = 0; i<MAX_PIPELINE_LENGTH-1; i++){
+                // close(pipefds[i][0]);
+                // close(pipefds[i][1]);
+            }
             waitpid(pid, &status, 0);
             printf("Exit status: %d\n", status);
         }
@@ -193,6 +237,10 @@ void execute_cmd()
     {
         free(pipes[i]);
     }
+    // for (int i = 0; i < MAX_PIPELINE_LENGTH - 1; i++)
+    // {
+    //     free(pipefds[i]);
+    // }
 }
 
 int main(int argc, char const *argv[])
