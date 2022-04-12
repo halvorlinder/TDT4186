@@ -16,7 +16,7 @@
 
 struct Background_Process {
     int pid;
-    char command_line[MAX_COMMAND_LENGTH];
+    char command_line[MAX_PATH];
 };
 
 struct Background_Process background_processes[MAX_BACKGROUND_PROCESSES];
@@ -60,6 +60,15 @@ void check_for_zombies()
     {
         remove_background_process(pid);
         printf("Process %d ended. Exit status: %d\n", pid, status);
+    }
+}
+
+void display_jobs()
+{
+    puts("Active background processes:");
+    for (size_t i = 0; i < active_background_processes; i++)
+    {
+        printf("[%d] %s\n", background_processes[i].pid, background_processes[i].command_line);
     }
 }
 
