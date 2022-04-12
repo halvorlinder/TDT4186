@@ -16,7 +16,7 @@
 
 struct Background_Process {
     int pid;
-    char *command_line;
+    char command_line[MAX_COMMAND_LENGTH];
 };
 
 struct Background_Process background_processes[MAX_BACKGROUND_PROCESSES];
@@ -26,7 +26,41 @@ void add_background_process (int pid, char *command_line)
 {
     struct Background_Process new_background_process;
     new_background_process.pid = pid;
-    new_background_process.command_line = command_line;
+    strcpy(new_background_process.command_line, command_line);background_processes[active_background_processes] = new_background_process;
+    active_background_processes++;
+}
+
+void remove_background_process (int pid)
+{
+    //Removes processes matchin pid from the array, but does not terminate anything.
+    int found = 0;
+    for (size_t i = 0; i < active_background_processes; i++)
+    {
+        if (background_processes[i].pid == pid)
+        {
+            found++;
+        }
+        else if (found)
+        {
+            background_processes[i-found] = background_processes[i];
+        }
+    }
+    active_background_processes-= found;
+    
+    
+}
+
+void check_for_zombies()
+{
+    int pid;
+    int status;
+
+    //Resolve each zombie
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+    {
+        remove_background_process(pid);
+        printf("Process %d ended. Exit status: %d\n", pid, status);
+    }
 }
 
 void change_dir(char *input)
@@ -65,8 +99,14 @@ void execute_cmd()
 
     char *token_pipe = strtok(raw_input, "|");
     while (token_pipe != NULL)
-    {
+    {   
         int is_background_process = token_pipe[strlen(token_pipe) - 1] == '&';
+
+        if (is_background_process)
+        {
+            token_pipe[strlen(token_pipe) - 1] = '\0';
+        }
+
         int j = 0;
         int input_index, output_index, end_index;
         input_index = output_index = end_index = -1;
@@ -99,7 +139,7 @@ void execute_cmd()
                 break;
             }
             j++;
-            }
+        }
 
         
         //Get the file names of the input/output files 
@@ -170,7 +210,7 @@ void execute_cmd()
         }
         else if (is_background_process)
         {
-
+            add_background_process(pid, token_pipe);
         }
         else
         {
@@ -193,6 +233,7 @@ int main(int argc, char const *argv[])
     char dir[MAX_PATH];
     while (1)
     {
+        check_for_zombies();
         // Print current working directory
         getcwd(dir, MAX_PATH);
         printf("%s: ", dir);
