@@ -116,11 +116,6 @@ void execute_cmd()
         pipes[i] = malloc(MAX_COMMAND_LENGTH + MAX_ARGS * MAX_ARG_LENGTH);
     }
 
-    // int *pipefds[MAX_PIPELINE_LENGTH - 1];
-    // for (int i = 0; i < MAX_PIPELINE_LENGTH - 1; i++)
-    // {
-    //     pipefds[i] = malloc(sizeof(int) * 2);
-    // }
     int pipefds[MAX_PIPELINE_LENGTH - 1][2];
 
     // Take input and strip
@@ -132,17 +127,14 @@ void execute_cmd()
     }
     raw_input[strcspn(raw_input, "\n")] = 0;
     strip(raw_input);
-    // printf("raw: %s\n", raw_input);
 
     // Check for background job and remove ampersand
     int is_background_process = raw_input[strlen(raw_input) - 1] == '&';
-    // printf("is_back: %d\n", is_background_process);
 
     if (is_background_process)
     {
         raw_input[strlen(raw_input) - 1] = '\0';
     }
-    // printf("new raw: %s\n", raw_input);
 
     // Clear the memory of the pipeline strings
     for (int i = 0; i < MAX_PIPELINE_LENGTH; i++)
@@ -162,17 +154,11 @@ void execute_cmd()
         i++;
         token_pipe = strtok(NULL, "|");
     }
+
     int pipe_length = i;
-    // printf("pipelength: %d\n", pipe_length);
     // Iterate over all pipelineparts and excecute
     for (int p = 0; p < pipe_length; p++)
     {
-        // printf("pipepart %d: %s \n", p, pipes[p]);
-        // if (i > 1)
-        // {
-        //     if (p < i - 1)
-        //         pipe(pipefds[i]);
-        // }
         int j = 0;
         int input_index, output_index, end_index;
         input_index = output_index = end_index = -1;
@@ -199,8 +185,7 @@ void execute_cmd()
             }
             j++;
         }
-        // printf("  output_index: %d\n", output_index);
-        // printf("  input_index: %d\n", input_index);
+
         // Get the file names of the input/output files
         if (output_index > 0 && input_index > 0)
         {
@@ -225,9 +210,6 @@ void execute_cmd()
         }
 
         char *command_with_args = strtok(pipes[p], "<>");
-        // printf("  output_filename: %s\n", output_file_name);
-        // printf("  input_filename: %s\n", input_file_name);
-        // printf("  command: %s\n", command_with_args);
 
         // Parse the command into args array by spliting on (space || tab)
         char args[MAX_ARGS][MAX_ARG_LENGTH];
@@ -291,8 +273,6 @@ void execute_cmd()
             // Handle pipeline redirection if there are pipes
             if (pipe_length > 1)
             {
-                // printf("fds: %d, %d, %d, %d\n", pipefds[p - 1][0], pipefds[p - 1][1], pipefds[p][0], pipefds[p][1]);
-                // puts(command_with_args);
                 if (p > 0)
                 {
                     dup2(pipefds[p - 1][0], 0);
